@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Folder } from "lucide-react";
 
@@ -40,8 +41,9 @@ export default async function ClientsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {clients.map((client) => (
-            <div
+            <Link
               key={client.id}
+              href={`/clients/${client.id}`}
               className="flex items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50"
             >
               <Folder className="size-8 shrink-0" />
@@ -57,7 +59,7 @@ export default async function ClientsPage() {
                   </p>
                 )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
