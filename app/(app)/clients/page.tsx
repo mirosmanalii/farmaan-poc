@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { Folder } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function ClientsPage() {
   const supabase = await createClient();
@@ -16,14 +16,23 @@ export default async function ClientsPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          Clients
-        </h2>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Clients
+          </h2>
 
-        <p className="mt-1 text-sm text-muted-foreground">
-          Browse and manage your clients and their cases.
-        </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Browse and manage your clients and their cases.
+          </p>
+        </div>
+
+        <Link
+          href="/clients/new"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          + New Client
+        </Link>
       </div>
 
       {clients.length === 0 ? (
