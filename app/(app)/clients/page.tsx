@@ -1,6 +1,14 @@
 import Link from "next/link";
-import { Folder } from "lucide-react";
+import { Folder, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(date));
+}
 
 export default async function ClientsPage() {
   const supabase = await createClient();
@@ -29,9 +37,10 @@ export default async function ClientsPage() {
 
         <Link
           href="/clients/new"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
-          + New Client
+          <Plus className="size-4" />
+          New Client
         </Link>
       </div>
 
@@ -48,28 +57,38 @@ export default async function ClientsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {clients.map((client) => (
-            <Link
-              key={client.id}
-              href={`/clients/${client.id}`}
-              className="flex items-center gap-4 rounded-lg border bg-card p-4 transition-colors hover:bg-muted/50"
-            >
-              <Folder className="size-8 shrink-0" />
+        <div className="overflow-hidden rounded-xl border bg-card">
+          <div className="grid grid-cols-[minmax(0,1fr)_180px_160px] border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <div>Name</div>
+            <div>Type</div>
+            <div>Updated</div>
+          </div>
 
-              <div className="min-w-0">
-                <h3 className="truncate font-medium">
-                  {client.name}
-                </h3>
+          <div>
+            {clients.map((client) => (
+              <Link
+                key={client.id}
+                href={`/clients/${client.id}`}
+                className="grid grid-cols-[minmax(0,1fr)_180px_160px] items-center border-b px-4 py-3.5 last:border-b-0 hover:bg-muted/50"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <Folder className="size-5 shrink-0" />
 
-                {client.client_type && (
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {client.client_type}
-                  </p>
-                )}
-              </div>
-            </Link>
-          ))}
+                  <span className="truncate text-sm font-medium">
+                    {client.name}
+                  </span>
+                </div>
+
+                <div className="text-sm text-muted-foreground">
+                  {client.client_type ?? "—"}
+                </div>
+
+                <div className="text-sm text-muted-foreground">
+                  {formatDate(client.updated_at)}
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </div>

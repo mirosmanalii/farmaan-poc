@@ -40,15 +40,22 @@ export default async function ClientPage({
 
   return (
     <div className="p-8">
-      <div className="mb-8">
+      {/* Breadcrumb */}
+      <div className="mb-5 flex items-center gap-2 text-sm">
         <Link
           href="/clients"
-          className="mb-5 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="size-4" />
           Clients
         </Link>
 
+        <span className="text-muted-foreground">/</span>
+
+        <span className="font-medium">{client.name}</span>
+      </div>
+
+      {/* Client header */}
+      <div className="mb-8">
         <h2 className="text-2xl font-semibold tracking-tight">
           {client.name}
         </h2>
@@ -58,7 +65,8 @@ export default async function ClientPage({
         </p>
       </div>
 
-      <div>
+      {/* Cases */}
+      <section>
         <div className="mb-4">
           <h3 className="text-lg font-semibold">Cases</h3>
 
@@ -80,43 +88,49 @@ export default async function ClientPage({
             </p>
           </div>
         ) : (
-          <div className="divide-y rounded-xl border bg-card">
-            {cases.map((caseItem) => (
-              <Link
-                key={caseItem.id}
-                href={`/cases/${caseItem.id}`}
-                className="flex items-center gap-4 p-4 hover:bg-muted/50"
-              >
-                <Folder className="size-7 shrink-0" />
+          <div className="overflow-hidden rounded-xl border bg-card">
+            <div className="grid grid-cols-[minmax(0,1fr)_180px_160px] border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <div>Name</div>
+              <div>Court</div>
+              <div>Status</div>
+            </div>
 
-                <div className="min-w-0 flex-1">
-                  <h4 className="truncate font-medium">
-                    {caseItem.name}
-                  </h4>
+            <div>
+              {cases.map((caseItem) => (
+                <Link
+                  key={caseItem.id}
+                  href={`/cases/${caseItem.id}`}
+                  className="grid grid-cols-[minmax(0,1fr)_180px_160px] items-center border-b px-4 py-3.5 last:border-b-0 hover:bg-muted/50"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Folder className="size-5 shrink-0" />
 
-                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                    {caseItem.case_number && (
-                      <span>{caseItem.case_number}</span>
-                    )}
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">
+                        {caseItem.name}
+                      </div>
 
-                    {caseItem.court && (
-                      <span>{caseItem.court}</span>
-                    )}
-
-                    {caseItem.case_type && (
-                      <span>{caseItem.case_type}</span>
-                    )}
+                      {caseItem.case_number && (
+                        <div className="mt-1 truncate text-xs text-muted-foreground">
+                          {caseItem.case_number}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <span className="text-sm capitalize text-muted-foreground">
-                  {caseItem.status}
-                </span>
-              </Link>
-            ))}
+                  <div className="truncate text-sm text-muted-foreground">
+                    {caseItem.court ?? "—"}
+                  </div>
+
+                  <div className="text-sm capitalize text-muted-foreground">
+                    {caseItem.status}
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }
