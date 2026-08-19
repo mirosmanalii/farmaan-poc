@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Folder } from "lucide-react";
+import { Folder } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 type ClientPageProps = {
@@ -40,29 +40,39 @@ export default async function ClientPage({
 
   return (
     <div className="p-8">
-      {/* Breadcrumb */}
-      <div className="mb-5 flex items-center gap-2 text-sm">
-        <Link
-          href="/clients"
-          className="text-muted-foreground hover:text-foreground"
-        >
-          Clients
-        </Link>
-
-        <span className="text-muted-foreground">/</span>
-
-        <span className="font-medium">{client.name}</span>
-      </div>
-
       {/* Client header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          {client.name}
-        </h2>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          {/* Breadcrumb */}
+          <div className="mb-5 flex items-center gap-2 text-sm">
+            <Link
+              href="/clients"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Clients
+            </Link>
 
-        <p className="mt-1 text-sm text-muted-foreground">
-          {client.client_type ?? "Client"}
-        </p>
+            <span className="text-muted-foreground">/</span>
+
+            <span className="font-medium">{client.name}</span>
+          </div>
+
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {client.name}
+          </h2>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            {client.client_type ?? "Client"}
+          </p>
+        </div>
+
+        {/* Edit button */}
+        <Link
+          href={`/clients/${client.id}/edit`}
+          className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+        >
+          Edit Client
+        </Link>
       </div>
 
       {/* Cases */}
@@ -89,12 +99,14 @@ export default async function ClientPage({
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border bg-card">
+            {/* Table header */}
             <div className="grid grid-cols-[minmax(0,1fr)_180px_160px] border-b bg-muted/30 px-4 py-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               <div>Name</div>
               <div>Court</div>
               <div>Status</div>
             </div>
 
+            {/* Case rows */}
             <div>
               {cases.map((caseItem) => (
                 <Link
