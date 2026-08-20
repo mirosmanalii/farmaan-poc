@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Folder } from "lucide-react";
+import { Folder, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 type ClientPageProps = {
@@ -66,7 +66,6 @@ export default async function ClientPage({
           </p>
         </div>
 
-        {/* Edit button */}
         <Link
           href={`/clients/${client.id}/edit`}
           className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
@@ -77,12 +76,22 @@ export default async function ClientPage({
 
       {/* Cases */}
       <section>
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold">Cases</h3>
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Cases</h3>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Cases and matters associated with this client.
-          </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Cases and matters associated with this client.
+            </p>
+          </div>
+
+          <Link
+            href={`/clients/${client.id}/cases/new`}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="size-4" />
+            New Case
+          </Link>
         </div>
 
         {cases.length === 0 ? (
@@ -94,8 +103,16 @@ export default async function ClientPage({
             </h4>
 
             <p className="mt-2 text-sm text-muted-foreground">
-              Cases for this client will appear here.
+              Create the first case for this client.
             </p>
+
+            <Link
+              href={`/clients/${client.id}/cases/new`}
+              className="mt-5 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="size-4" />
+              New Case
+            </Link>
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border bg-card">
