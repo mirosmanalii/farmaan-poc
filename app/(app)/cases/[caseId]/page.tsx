@@ -208,7 +208,11 @@ export default async function CasePage({
         </h2>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border bg-card p-5">
+          {/* Documents */}
+          <Link
+            href={`/cases/${caseItem.id}/documents`}
+            className="rounded-xl border bg-card p-5 transition-colors hover:bg-muted/50"
+          >
             <Folder className="mb-3 size-5" />
 
             <h3 className="font-medium">
@@ -218,8 +222,9 @@ export default async function CasePage({
             <p className="mt-1 text-sm text-muted-foreground">
               Case files and supporting documents.
             </p>
-          </div>
+          </Link>
 
+          {/* Timeline */}
           <div className="rounded-xl border bg-card p-5">
             <CalendarDays className="mb-3 size-5" />
 
@@ -232,6 +237,7 @@ export default async function CasePage({
             </p>
           </div>
 
+          {/* Parties */}
           <div className="rounded-xl border bg-card p-5">
             <FileText className="mb-3 size-5" />
 
@@ -244,6 +250,7 @@ export default async function CasePage({
             </p>
           </div>
 
+          {/* Notes */}
           <div className="rounded-xl border bg-card p-5">
             <FileText className="mb-3 size-5" />
 
