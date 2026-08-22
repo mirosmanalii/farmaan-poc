@@ -7,6 +7,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import CaseWorkspace from "./components/case-workspace";
 
 type CasePageProps = {
   params: Promise<{
@@ -82,7 +83,7 @@ export default async function CasePage({
       </div>
 
       {/* Case header */}
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-8 flex items-start justify-between gap-6">
         <div className="min-w-0">
           <div className="mb-3 flex items-center gap-3">
             <Folder className="size-6 shrink-0" />
@@ -188,7 +189,7 @@ export default async function CasePage({
         </div>
       </div>
 
-      {/* Description */}
+      {/* Case description */}
       <section className="mb-8">
         <h2 className="mb-3 text-lg font-semibold">
           Case Description
@@ -202,68 +203,10 @@ export default async function CasePage({
       </section>
 
       {/* Case workspace */}
-      <section>
-        <h2 className="mb-4 text-lg font-semibold">
-          Case Workspace
-        </h2>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Documents */}
-          <Link
-            href={`/cases/${caseItem.id}/documents`}
-            className="rounded-xl border bg-card p-5 transition-colors hover:bg-muted/50"
-          >
-            <Folder className="mb-3 size-5" />
-
-            <h3 className="font-medium">
-              Documents
-            </h3>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Case files and supporting documents.
-            </p>
-          </Link>
-
-          {/* Timeline */}
-          <div className="rounded-xl border bg-card p-5">
-            <CalendarDays className="mb-3 size-5" />
-
-            <h3 className="font-medium">
-              Timeline
-            </h3>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Important events and case history.
-            </p>
-          </div>
-
-          {/* Parties */}
-          <div className="rounded-xl border bg-card p-5">
-            <FileText className="mb-3 size-5" />
-
-            <h3 className="font-medium">
-              Parties
-            </h3>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              People and organizations involved.
-            </p>
-          </div>
-
-          {/* Notes */}
-          <div className="rounded-xl border bg-card p-5">
-            <FileText className="mb-3 size-5" />
-
-            <h3 className="font-medium">
-              Notes
-            </h3>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Internal case notes and observations.
-            </p>
-          </div>
-        </div>
-      </section>
+      <CaseWorkspace
+        caseId={caseItem.id}
+        caseName={caseItem.name}
+      />
     </div>
   );
 }
