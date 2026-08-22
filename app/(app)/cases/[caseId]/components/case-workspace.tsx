@@ -28,6 +28,7 @@ type CaseWorkspaceProps = {
 type DocumentItem = {
   id: string;
   name: string;
+  storage_path: string;
   file_type: string | null;
   file_size: number | null;
   uploaded_at: string;
@@ -186,6 +187,8 @@ function DocumentsTab({
   const [loadingDocuments, setLoadingDocuments] =
     useState(true);
   const [uploading, setUploading] = useState(false);
+  const [openingDocumentId, setOpeningDocumentId] =
+    useState<string | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -199,7 +202,7 @@ function DocumentsTab({
     const { data, error: documentsError } = await supabase
       .from("documents")
       .select(
-        "id, name, file_type, file_size, uploaded_at"
+        "id, name, storage_path, file_type, file_size, uploaded_at"
       )
       .eq("case_id", caseId)
       .order("uploaded_at", { ascending: false });
@@ -471,6 +474,41 @@ function DocumentsTab({
     return `${baseName} (${counter})${extension}`;
   }
 
+  async function handleOpenDocument(
+    document: DocumentItem
+  ) {
+    setOpeningDocumentId(document.id);
+    setError("");
+
+    try {
+      const { data, error: signedUrlError } =
+        await supabase.storage
+          .from("case-documents")
+          .createSignedUrl(document.storage_path, 300);
+
+      if (signedUrlError || !data?.signedUrl) {
+        throw new Error(
+          signedUrlError?.message ??
+            "Could not create a secure document URL."
+        );
+      }
+
+      window.open(
+        data.signedUrl,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    } catch (documentError) {
+      setError(
+        documentError instanceof Error
+          ? documentError.message
+          : "Could not open the document."
+      );
+    } finally {
+      setOpeningDocumentId(null);
+    }
+  }
+
   return (
     <div className="space-y-5">
       {/* Compact upload bar */}
@@ -621,12 +659,19 @@ function DocumentsTab({
 
             <div>
               {documents.map((document) => (
-                <div
+                <button
                   key={document.id}
-                  className="grid grid-cols-[minmax(0,1fr)_120px_120px_140px] items-center border-b px-4 py-3 last:border-b-0 hover:bg-muted/50"
+                  type="button"
+                  onClick={() => handleOpenDocument(document)}
+                  disabled={openingDocumentId === document.id}
+                  className="grid w-full grid-cols-[minmax(0,1fr)_120px_120px_140px] items-center border-b px-4 py-3 text-left last:border-b-0 hover:bg-muted/50 disabled:cursor-wait disabled:opacity-70"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <FileText className="size-4 shrink-0" />
+                    {openingDocumentId === document.id ? (
+                      <Loader2 className="size-4 shrink-0 animate-spin" />
+                    ) : (
+                      <FileText className="size-4 shrink-0" />
+                    )}
 
                     <span className="truncate text-sm font-medium">
                       {document.name}
@@ -644,7 +689,7 @@ function DocumentsTab({
                   <div className="text-sm text-muted-foreground">
                     {formatDate(document.uploaded_at)}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
