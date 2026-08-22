@@ -6,7 +6,9 @@ import {
   FileText,
   Folder,
   Loader2,
+  MoreHorizontal,
   StickyNote,
+  Trash2,
   Upload,
   Users,
   X,
@@ -183,12 +185,17 @@ function DocumentsTab({
 
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] =
+    useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [loadingDocuments, setLoadingDocuments] =
     useState(true);
   const [uploading, setUploading] = useState(false);
   const [openingDocumentId, setOpeningDocumentId] =
     useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] =
+    useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -216,6 +223,7 @@ function DocumentsTab({
     }
 
     setDocuments(data ?? []);
+    setSelectedDocumentIds([]);
     setLoadingDocuments(false);
   }
 
@@ -294,6 +302,27 @@ function DocumentsTab({
   function removeSelectedFile(index: number) {
     setSelectedFiles((currentFiles) =>
       currentFiles.filter((_, fileIndex) => fileIndex !== index)
+    );
+  }
+
+  function toggleDocumentSelection(documentId: string) {
+    setSelectedDocumentIds((currentIds) => {
+      if (currentIds.includes(documentId)) {
+        return currentIds.filter((id) => id !== documentId);
+      }
+
+      return [...currentIds, documentId];
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedDocumentIds.length === documents.length) {
+      setSelectedDocumentIds([]);
+      return;
+    }
+
+    setSelectedDocumentIds(
+      documents.map((document) => document.id)
     );
   }
 
@@ -509,6 +538,66 @@ function DocumentsTab({
     }
   }
 
+  async function handleDeleteDocuments() {
+    if (selectedDocumentIds.length === 0) {
+      return;
+    }
+
+    setDeleting(true);
+    setError("");
+
+    try {
+      const documentsToDelete = documents.filter(
+        (document) =>
+          selectedDocumentIds.includes(document.id)
+      );
+
+      const storagePaths = documentsToDelete.map(
+        (document) => document.storage_path
+      );
+
+      const { error: storageError } =
+        await supabase.storage
+          .from("case-documents")
+          .remove(storagePaths);
+
+      if (storageError) {
+        throw new Error(
+          `Could not delete the document files: ${storageError.message}`
+        );
+      }
+
+      const { error: databaseError } = await supabase
+        .from("documents")
+        .delete()
+        .in("id", selectedDocumentIds)
+        .eq("case_id", caseId);
+
+      if (databaseError) {
+        throw new Error(
+          `The files were removed, but their metadata could not be deleted: ${databaseError.message}`
+        );
+      }
+
+      setSelectedDocumentIds([]);
+      setShowDeleteConfirmation(false);
+
+      await loadDocuments();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Something went wrong while deleting the documents."
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const allDocumentsSelected =
+    documents.length > 0 &&
+    selectedDocumentIds.length === documents.length;
+
   return (
     <div className="space-y-5">
       {/* Compact upload bar */}
@@ -548,7 +637,7 @@ function DocumentsTab({
         />
       </div>
 
-      {/* Selected files */}
+      {/* Selected files waiting for upload */}
       {selectedFiles.length > 0 && (
         <div className="rounded-lg border bg-card">
           <div className="flex items-center justify-between border-b px-4 py-3">
@@ -607,6 +696,25 @@ function DocumentsTab({
         </div>
       )}
 
+      {/* Bulk selection toolbar */}
+      {selectedDocumentIds.length > 0 && (
+        <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-4 py-2.5">
+          <span className="text-sm font-medium">
+            {selectedDocumentIds.length} selected
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirmation(true)}
+            disabled={deleting}
+            className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+          >
+            <Trash2 className="size-4" />
+            Delete
+          </button>
+        </div>
+      )}
+
       {/* Error */}
       {error && (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -650,51 +758,167 @@ function DocumentsTab({
           </div>
         ) : (
           <div className="overflow-hidden rounded-lg border bg-card">
-            <div className="grid grid-cols-[minmax(0,1fr)_120px_120px_140px] border-b bg-muted/30 px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {/* Table header */}
+            <div className="grid grid-cols-[44px_minmax(0,1fr)_120px_120px_140px_44px] items-center border-b bg-muted/30 px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <div>
+                <input
+                  type="checkbox"
+                  checked={allDocumentsSelected}
+                  onChange={toggleSelectAll}
+                  aria-label="Select all documents"
+                  className="size-4 rounded border-input"
+                />
+              </div>
+
               <div>Name</div>
               <div>Type</div>
               <div>Size</div>
               <div>Uploaded</div>
+              <div />
             </div>
 
+            {/* Document rows */}
             <div>
-              {documents.map((document) => (
-                <button
-                  key={document.id}
-                  type="button"
-                  onClick={() => handleOpenDocument(document)}
-                  disabled={openingDocumentId === document.id}
-                  className="grid w-full grid-cols-[minmax(0,1fr)_120px_120px_140px] items-center border-b px-4 py-3 text-left last:border-b-0 hover:bg-muted/50 disabled:cursor-wait disabled:opacity-70"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    {openingDocumentId === document.id ? (
-                      <Loader2 className="size-4 shrink-0 animate-spin" />
-                    ) : (
-                      <FileText className="size-4 shrink-0" />
-                    )}
+              {documents.map((document) => {
+                const isSelected =
+                  selectedDocumentIds.includes(document.id);
 
-                    <span className="truncate text-sm font-medium">
-                      {document.name}
-                    </span>
-                  </div>
+                const isOpening =
+                  openingDocumentId === document.id;
 
-                  <div className="text-sm text-muted-foreground">
-                    PDF
-                  </div>
+                return (
+                  <div
+                    key={document.id}
+                    className={`grid grid-cols-[44px_minmax(0,1fr)_120px_120px_140px_44px] items-center border-b px-4 py-3 last:border-b-0 ${
+                      isSelected
+                        ? "bg-muted/50"
+                        : "hover:bg-muted/30"
+                    }`}
+                  >
+                    {/* Checkbox */}
+                    <div>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() =>
+                          toggleDocumentSelection(
+                            document.id
+                          )
+                        }
+                        aria-label={`Select ${document.name}`}
+                        className="size-4 rounded border-input"
+                      />
+                    </div>
 
-                  <div className="text-sm text-muted-foreground">
-                    {formatFileSize(document.file_size)}
-                  </div>
+                    {/* Name */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleOpenDocument(document)
+                      }
+                      disabled={isOpening}
+                      className="flex min-w-0 items-center gap-3 text-left hover:underline disabled:cursor-wait"
+                    >
+                      {isOpening ? (
+                        <Loader2 className="size-4 shrink-0 animate-spin" />
+                      ) : (
+                        <FileText className="size-4 shrink-0" />
+                      )}
 
-                  <div className="text-sm text-muted-foreground">
-                    {formatDate(document.uploaded_at)}
+                      <span className="truncate text-sm font-medium">
+                        {document.name}
+                      </span>
+                    </button>
+
+                    {/* Type */}
+                    <div className="text-sm text-muted-foreground">
+                      PDF
+                    </div>
+
+                    {/* Size */}
+                    <div className="text-sm text-muted-foreground">
+                      {formatFileSize(document.file_size)}
+                    </div>
+
+                    {/* Uploaded */}
+                    <div className="text-sm text-muted-foreground">
+                      {formatDate(document.uploaded_at)}
+                    </div>
+
+                    {/* Individual actions placeholder */}
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        aria-label={`More actions for ${document.name}`}
+                      >
+                        <MoreHorizontal className="size-4" />
+                      </button>
+                    </div>
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
       </div>
+
+      {/* Delete confirmation */}
+      {showDeleteConfirmation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl border bg-background p-6 shadow-lg">
+            <div className="flex items-start gap-4">
+              <div className="rounded-full bg-destructive/10 p-2">
+                <Trash2 className="size-5 text-destructive" />
+              </div>
+
+              <div className="min-w-0">
+                <h3 className="font-semibold">
+                  Delete{" "}
+                  {selectedDocumentIds.length === 1
+                    ? "document"
+                    : "documents"}
+                  ?
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  This will permanently remove the selected{" "}
+                  {selectedDocumentIds.length === 1
+                    ? "document"
+                    : "documents"}{" "}
+                  from this case.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setShowDeleteConfirmation(false)
+                }
+                disabled={deleting}
+                className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDeleteDocuments}
+                disabled={deleting}
+                className="inline-flex items-center gap-2 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {deleting && (
+                  <Loader2 className="size-4 animate-spin" />
+                )}
+
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
